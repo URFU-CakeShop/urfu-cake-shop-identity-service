@@ -7,12 +7,12 @@
 
 users
 
-id UUID PK
-email VARCHAR UNIQUE NOT NULL
-password_hash TEXT NOT NULL
-status VARCHAR NOT NULL -- ACTIVE / BLOCKED
-created_at TIMESTAMP NOT NULL
-updated_at TIMESTAMP NOT NULL
+#### id UUID PK
+#### email VARCHAR UNIQUE NOT NULL
+#### password_hash TEXT NOT NULL
+#### status VARCHAR NOT NULL -- ACTIVE / BLOCKED
+#### created_at TIMESTAMP NOT NULL
+#### updated_at TIMESTAMP NOT NULL
 
 
 roles

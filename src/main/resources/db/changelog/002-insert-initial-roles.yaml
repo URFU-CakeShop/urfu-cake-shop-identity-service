@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002
+      author: Artamonov Vyacheslav
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  valueComputed: "gen_random_uuid()"
+              - column:
+                  name: role
+                  value: "USER"
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  valueComputed: "gen_random_uuid()"
+              - column:
+                  name: role
+                  value: "ADMIN"

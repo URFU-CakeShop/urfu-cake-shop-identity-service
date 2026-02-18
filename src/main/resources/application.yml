@@ -1,0 +1,26 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  security:
+    user:
+      name: slava
+      password: slava
+  datasource:
+    url: jdbc:postgresql://localhost:5432/identity_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+    contexts: development,production
+
+logging:
+  level:
+    org.hibernate.SQL: OFF
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF

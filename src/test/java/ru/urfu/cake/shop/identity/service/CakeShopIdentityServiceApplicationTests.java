@@ -1,4 +1,4 @@
-package ru.urfu.cake_shop_identity_service;
+package ru.urfu.cake.shop.identity.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

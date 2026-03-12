@@ -12,16 +12,16 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = true)
+    @Column()
     private String city;
 
-    @Column(nullable = true)
+    @Column()
     private String street;
 
-    @Column(nullable = true)
+    @Column()
     private String house;
 
-    @Column(nullable = true)
+    @Column()
     private String apartment;
 
     @OneToOne(mappedBy = "address")

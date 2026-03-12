@@ -33,6 +33,6 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/cake-shop-identity-service:${{ github.sha }}
+          IMAGE=ghcr.io/urfu-cakeshop/cake-shop-identity-service:${{ github.sha }}
           docker build -t $IMAGE .
           docker push $IMAGE

@@ -3,8 +3,8 @@ spring:
     allow-bean-definition-overriding: true
   security:
     user:
-      name: slava
-      password: slava
+      name: user
+      password: password
   datasource:
     url: jdbc:postgresql://localhost:5432/identity_db
     username: postgres

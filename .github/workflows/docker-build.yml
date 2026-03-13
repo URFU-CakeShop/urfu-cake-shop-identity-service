@@ -1,41 +1,78 @@
-name: Build & Push Docker Image
+name: CI Pipeline
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  pull_request:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: identity_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/identity_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
+          cache: gradle
 
-      - name: Build Jar with Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: build -x test
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build and test project
+        run: ./gradlew build
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build Docker image
         run: |
-          IMAGE_SHA=ghcr.io/urfu-cakeshop/cake-shop-identity-service:${{ github.sha }}
-          IMAGE_LATEST=ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+          IMAGE=ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+          docker build -t $IMAGE .
 
-          docker build -t $IMAGE_SHA -t $IMAGE_LATEST .
-          docker push $IMAGE_SHA
-          docker push $IMAGE_LATEST
+      - name: Security scan Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+
+      - name: Push Docker image
+        run: |
+          IMAGE=ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+          docker push $IMAGE

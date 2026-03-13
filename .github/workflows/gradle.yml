@@ -1,0 +1,54 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew build
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          IMAGE=ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+          docker build -t $IMAGE .
+
+      - name: Push Docker image
+        run: |
+          IMAGE=ghcr.io/urfu-cakeshop/cake-shop-identity-service:latest
+          docker push $IMAGE

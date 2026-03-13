@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 001
+      id: 002
       author: Artamonov Vyacheslav
       changes:
         - createTable:

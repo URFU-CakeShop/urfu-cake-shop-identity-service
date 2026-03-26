@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'ru.urfu'
-version = '0.0.6'
+version = '0.0.7'
 description = 'Сервис отвечает за аутентификацию и авторизацию пользователей'
 
 java {

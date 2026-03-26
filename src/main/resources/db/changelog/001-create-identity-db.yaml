@@ -4,11 +4,11 @@ databaseChangeLog:
       author: Artamonov Vyacheslav
       preConditions:
         - not:
-            - sqlCheck:
-                expectedResult: "1"
-                sql: "SELECT 1 FROM pg_database WHERE datname='identity_db';"
-          onFail: MARK_RAN
+            sqlCheck:
+              expectedResult: "1"
+              sql: "SELECT 1 FROM pg_database WHERE datname='identity_db';"
       changes:
         - sql:
             sql: |
               CREATE DATABASE identity_db;
+      failOnError: false

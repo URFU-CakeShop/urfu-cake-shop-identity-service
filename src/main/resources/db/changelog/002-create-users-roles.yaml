@@ -1,8 +1,25 @@
 databaseChangeLog:
   - changeSet:
-      id: 002
+      id: 002-create-users-roles
       author: Artamonov Vyacheslav
+      preConditions:
+        - tableExists:
+            tableName: users
+            onFail: MARK_RAN
+        - tableExists:
+            tableName: addresses
+            onFail: MARK_RAN
+        - tableExists:
+            tableName: roles
+            onFail: MARK_RAN
+        - tableExists:
+            tableName: user_roles
+            onFail: MARK_RAN
+        - tableExists:
+            tableName: refresh_tokens
+            onFail: MARK_RAN
       changes:
+        # Таблица пользователей
         - createTable:
             tableName: users
             columns:
@@ -12,76 +29,60 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
                     nullable: false
-
               - column:
                   name: email
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
                     unique: true
-
               - column:
                   name: password
                   type: TEXT
                   constraints:
                     nullable: false
-
               - column:
                   name: first_name
                   type: VARCHAR(255)
-
               - column:
                   name: last_name
                   type: VARCHAR(255)
-
               - column:
                   name: middle_name
                   type: VARCHAR(255)
-
               - column:
                   name: address_id
                   type: BIGINT
-                  constraints:
-                    nullable: true
-
               - column:
                   name: has_sugar
                   type: BOOLEAN
-
               - column:
                   name: phone_number
                   type: VARCHAR(50)
-
               - column:
                   name: created_at
                   type: TIMESTAMP
                   defaultValueComputed: CURRENT_TIMESTAMP
-
               - column:
                   name: updated_at
                   type: TIMESTAMP
                   defaultValueComputed: CURRENT_TIMESTAMP
-
               - column:
                   name: last_login
                   type: TIMESTAMP
-
               - column:
                   name: cart_id
                   type: UUID
-
               - column:
                   name: avatar_image_id
                   type: UUID
-
               - column:
                   name: public_description
                   type: TEXT
-
               - column:
                   name: internal_description
                   type: TEXT
 
+        # Таблица адресов
         - createTable:
             tableName: addresses
             columns:
@@ -105,6 +106,7 @@ databaseChangeLog:
                   name: apartment
                   type: VARCHAR(50)
 
+        # Таблица ролей
         - createTable:
             tableName: roles
             columns:
@@ -114,7 +116,6 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
                     nullable: false
-
               - column:
                   name: role
                   type: VARCHAR(50)
@@ -122,6 +123,7 @@ databaseChangeLog:
                     nullable: false
                     unique: true
 
+        # Таблица user_roles
         - createTable:
             tableName: user_roles
             columns:
@@ -130,13 +132,13 @@ databaseChangeLog:
                   type: UUID
                   constraints:
                     nullable: false
-
               - column:
                   name: role_id
                   type: UUID
                   constraints:
                     nullable: false
 
+        # Таблица refresh_tokens
         - createTable:
             tableName: refresh_tokens
             columns:
@@ -168,12 +170,14 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+        # Foreign key constraints
         - addForeignKeyConstraint:
             baseTableName: user_roles
             baseColumnNames: user_id
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_userroles_user
+            onDelete: CASCADE
 
         - addForeignKeyConstraint:
             baseTableName: user_roles
@@ -181,6 +185,7 @@ databaseChangeLog:
             referencedTableName: roles
             referencedColumnNames: id
             constraintName: fk_userroles_role
+            onDelete: CASCADE
 
         - addForeignKeyConstraint:
             baseTableName: refresh_tokens
@@ -188,3 +193,4 @@ databaseChangeLog:
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_refreshtokens_user
+            onDelete: CASCADE

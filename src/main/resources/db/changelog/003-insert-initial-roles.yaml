@@ -1,7 +1,12 @@
 databaseChangeLog:
   - changeSet:
-      id: 003
+      id: 003-insert-roles
       author: Artamonov Vyacheslav
+      preConditions:
+        - not:
+            tableIsEmpty:
+              tableName: roles
+              onFail: MARK_RAN
       changes:
         - insert:
             tableName: roles

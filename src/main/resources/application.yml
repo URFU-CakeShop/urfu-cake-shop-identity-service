@@ -1,4 +1,14 @@
 spring:
+  application:
+    name: cake-shop-identity-service
+    cloud:
+      consul:
+        host: localhost
+        port: 8500
+        discovery:
+          register: true
+          health-check-path: /actuator/health
+          health-check-interval: 10s
   main:
     allow-bean-definition-overriding: true
   security:

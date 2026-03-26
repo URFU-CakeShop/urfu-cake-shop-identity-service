@@ -3,10 +3,9 @@ databaseChangeLog:
       id: 003-insert-roles
       author: Artamonov Vyacheslav
       preConditions:
-        - not:
-            tableIsEmpty:
-              tableName: roles
-              onFail: MARK_RAN
+        - onFail: MARK_RAN
+        - tableIsEmpty:
+            tableName: roles
       changes:
         - insert:
             tableName: roles

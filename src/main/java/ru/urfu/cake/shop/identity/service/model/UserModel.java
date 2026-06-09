@@ -1,5 +1,6 @@
 package ru.urfu.cake.shop.identity.service.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Embedded;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Data
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Модель пользователя")
 public class UserModel {
 

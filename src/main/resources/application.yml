@@ -1,20 +1,16 @@
 spring:
   application:
     name: cake-shop-identity-service
-    cloud:
-      consul:
-        host: localhost
-        port: 8500
-        discovery:
-          register: true
-          health-check-path: /actuator/health
-          health-check-interval: 10s
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
   main:
     allow-bean-definition-overriding: true
-  security:
-    user:
-      name: user
-      password: password
   datasource:
     url: jdbc:postgresql://localhost:5432/identity_db
     username: postgres
@@ -23,7 +19,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
 
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml

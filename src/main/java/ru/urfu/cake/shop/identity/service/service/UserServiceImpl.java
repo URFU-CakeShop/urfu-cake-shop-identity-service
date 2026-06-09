@@ -3,10 +3,12 @@ package ru.urfu.cake.shop.identity.service.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto;
 import ru.urfu.cake.shop.identity.service.entity.Address;
 import ru.urfu.cake.shop.identity.service.entity.Role;
 import ru.urfu.cake.shop.identity.service.entity.User;
+import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException;
 import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException;
 import ru.urfu.cake.shop.identity.service.model.AddressModel;
 import ru.urfu.cake.shop.identity.service.model.UserModel;
@@ -24,23 +26,24 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public User login(String email, String rawPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+    @Override
+    @Transactional
+    public UserModel login(String email, String rawPassword) {
+        User user = userRepository.findByEmail(email).orElse(null);
 
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Неверный пароль");
+        if (user == null || !passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new InvalidCredentialsException();
         }
 
-        // Обновляем время последнего входа
         user.setLastLogin(TimeUtil.now());
         userRepository.save(user);
 
-        return user;
+        return toModel(user);
     }
 
-    public User register(UserRegistrationDto dto) {
-
+    @Override
+    @Transactional
+    public UserModel register(UserRegistrationDto dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException(dto.getEmail());
         }
@@ -51,13 +54,11 @@ public class UserServiceImpl implements UserService {
         user.setCreatedAt(TimeUtil.now());
         user.setUpdatedAt(TimeUtil.now());
 
-        // Личные данные
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setMiddleName(dto.getMiddleName());
         user.setPhoneNumber(dto.getPhoneNumber());
         user.setHasSugar(dto.getHasSugar());
-
 
         if (dto.getCity() != null || dto.getStreet() != null || dto.getHouse() != null || dto.getApartment() != null) {
             Address address = new Address();
@@ -68,14 +69,10 @@ public class UserServiceImpl implements UserService {
             user.setAddress(address);
         }
 
-        // Описания
         user.setPublicDescription(dto.getPublicDescription());
-
-        // Связи с другими сервисами (пока null, создаются отдельным процессом)
         user.setCartId(null);
         user.setAvatarImageId(null);
 
-        // Роль пользователя
         Role userRole = roleRepository.findByRole("USER")
                 .orElseThrow(() -> new IllegalStateException("Role USER не найдена"));
 
@@ -83,13 +80,10 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
 
-        return user;
+        return toModel(user);
     }
 
-    /**
-     * Преобразование сущности User в модель для API
-     */
-    public UserModel toModel(User user) {
+    private UserModel toModel(User user) {
         return UserModel.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -104,8 +98,8 @@ public class UserServiceImpl implements UserService {
                 .hasSugar(user.getHasSugar())
                 .cartId(user.getCartId())
                 .avatarImageId(user.getAvatarImageId())
+                .imageIds(user.getImageIds())
                 .publicDescription(user.getPublicDescription())
-                .internalDescription(user.getInternalDescription())
                 .roles(user.getRoles().stream()
                         .map(Role::getRole)
                         .collect(Collectors.toSet()))
@@ -113,7 +107,9 @@ public class UserServiceImpl implements UserService {
     }
 
     private AddressModel toModel(Address address) {
-        if (address == null) return null;
+        if (address == null) {
+            return null;
+        }
 
         return AddressModel.builder()
                 .city(address.getCity())

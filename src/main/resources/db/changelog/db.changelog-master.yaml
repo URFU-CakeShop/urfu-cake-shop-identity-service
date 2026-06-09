@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/002-create-users-roles.yaml
   - include:
       file: db/changelog/003-insert-initial-roles.yaml
+  - include:
+      file: db/changelog/004-add-user-image-ids.yaml

@@ -4,7 +4,7 @@ package ru.urfu.cake.shop.identity.service.exception;
 public class InvalidCredentialsException extends RuntimeException {
 
     public InvalidCredentialsException() {
-        super("Invalid email or password");
+        super("Неверный email или пароль");
     }
 
     public InvalidCredentialsException(String message) {

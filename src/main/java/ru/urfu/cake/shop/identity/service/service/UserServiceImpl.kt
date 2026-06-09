@@ -1,121 +1,110 @@
-package ru.urfu.cake.shop.identity.service.service;
+package ru.urfu.cake.shop.identity.service.service
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto;
-import ru.urfu.cake.shop.identity.service.entity.Address;
-import ru.urfu.cake.shop.identity.service.entity.Role;
-import ru.urfu.cake.shop.identity.service.entity.User;
-import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException;
-import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException;
-import ru.urfu.cake.shop.identity.service.model.AddressModel;
-import ru.urfu.cake.shop.identity.service.model.UserModel;
-import ru.urfu.cake.shop.identity.service.repository.RoleRepository;
-import ru.urfu.cake.shop.identity.service.repository.UserRepository;
-import ru.urfu.cake.shop.identity.service.util.TimeUtil;
-
-import java.util.stream.Collectors;
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto
+import ru.urfu.cake.shop.identity.service.entity.Address
+import ru.urfu.cake.shop.identity.service.entity.User
+import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException
+import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException
+import ru.urfu.cake.shop.identity.service.model.AddressModel
+import ru.urfu.cake.shop.identity.service.model.UserModel
+import ru.urfu.cake.shop.identity.service.repository.RoleRepository
+import ru.urfu.cake.shop.identity.service.repository.UserRepository
+import ru.urfu.cake.shop.identity.service.util.TimeUtil
+import kotlin.jvm.optionals.getOrNull
 
 @Service
-@RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+class UserServiceImpl(
+    private val userRepository: UserRepository,
+    private val roleRepository: RoleRepository,
+    private val passwordEncoder: PasswordEncoder
+) : UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @Override
     @Transactional
-    public UserModel login(String email, String rawPassword) {
-        User user = userRepository.findByEmail(email).orElse(null);
+    override fun login(email: String, rawPassword: String): UserModel {
+        val user = userRepository.findByEmail(email).getOrNull()
+            ?: throw InvalidCredentialsException()
 
-        if (user == null || !passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new InvalidCredentialsException();
+        if (!passwordEncoder.matches(rawPassword, user.password)) {
+            throw InvalidCredentialsException()
         }
 
-        user.setLastLogin(TimeUtil.now());
-        userRepository.save(user);
+        user.lastLogin = TimeUtil.now()
+        userRepository.save(user)
 
-        return toModel(user);
+        return toModel(user)
     }
 
-    @Override
     @Transactional
-    public UserModel register(UserRegistrationDto dto) {
-        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException(dto.getEmail());
+    override fun register(dto: UserRegistrationDto): UserModel {
+        val email = dto.email
+
+        if (userRepository.findByEmail(email).isPresent) {
+            throw UserAlreadyExistsException(email)
         }
 
-        User user = new User();
-        user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setCreatedAt(TimeUtil.now());
-        user.setUpdatedAt(TimeUtil.now());
+        val user = User().apply {
+            this.email = email
+            this.password = passwordEncoder.encode(dto.password)
+            this.createdAt = TimeUtil.now()
+            this.updatedAt = TimeUtil.now()
+            this.firstName = dto.firstName
+            this.lastName = dto.lastName
+            this.middleName = dto.middleName
+            this.phoneNumber = dto.phoneNumber
+            this.hasSugar = dto.hasSugar
+            this.publicDescription = dto.publicDescription
+            this.cartId = null
+            this.avatarImageId = null
 
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setMiddleName(dto.getMiddleName());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        user.setHasSugar(dto.getHasSugar());
-
-        if (dto.getCity() != null || dto.getStreet() != null || dto.getHouse() != null || dto.getApartment() != null) {
-            Address address = new Address();
-            address.setCity(dto.getCity());
-            address.setStreet(dto.getStreet());
-            address.setHouse(dto.getHouse());
-            address.setApartment(dto.getApartment());
-            user.setAddress(address);
+            if (dto.city != null || dto.street != null || dto.house != null || dto.apartment != null) {
+                this.address = Address().apply {
+                    city = dto.city ?: ""
+                    street = dto.street ?: ""
+                    house = dto.house ?: ""
+                    apartment = dto.apartment ?: ""
+                }
+            }
         }
 
-        user.setPublicDescription(dto.getPublicDescription());
-        user.setCartId(null);
-        user.setAvatarImageId(null);
+        val userRole = roleRepository.findByRole("USER")
+            .orElseThrow { IllegalStateException("Role USER не найдена") }
 
-        Role userRole = roleRepository.findByRole("USER")
-                .orElseThrow(() -> new IllegalStateException("Role USER не найдена"));
+        user.roles.add(userRole)
+        userRepository.save(user)
 
-        user.getRoles().add(userRole);
-
-        userRepository.save(user);
-
-        return toModel(user);
+        return toModel(user)
     }
 
-    private UserModel toModel(User user) {
-        return UserModel.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .lastLogin(user.getLastLogin())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .middleName(user.getMiddleName())
-                .address(toModel(user.getAddress()))
-                .phoneNumber(user.getPhoneNumber())
-                .hasSugar(user.getHasSugar())
-                .cartId(user.getCartId())
-                .avatarImageId(user.getAvatarImageId())
-                .imageIds(user.getImageIds())
-                .publicDescription(user.getPublicDescription())
-                .roles(user.getRoles().stream()
-                        .map(Role::getRole)
-                        .collect(Collectors.toSet()))
-                .build();
+    private fun toModel(user: User): UserModel {
+        return UserModel(
+            id = user.id,
+            email = user.email,
+            createdAt = user.createdAt,
+            updatedAt = user.updatedAt,
+            lastLogin = user.lastLogin,
+            firstName = user.firstName,
+            lastName = user.lastName,
+            middleName = user.middleName,
+            address = toModel(user.address),
+            phoneNumber = user.phoneNumber,
+            hasSugar = user.hasSugar,
+            cartId = user.cartId,
+            avatarImageId = user.avatarImageId,
+            imageIds = user.imageIds.toSet(),
+            publicDescription = user.publicDescription,
+            roles = user.roles.map { it.role }.toSet()
+        )
     }
 
-    private AddressModel toModel(Address address) {
-        if (address == null) {
-            return null;
-        }
-
-        return AddressModel.builder()
-                .city(address.getCity())
-                .street(address.getStreet())
-                .house(address.getHouse())
-                .apartment(address.getApartment())
-                .build();
+    private fun toModel(address: Address?): AddressModel? = address?.let {
+        AddressModel(
+            city = it.city,
+            street = it.street,
+            house = it.house,
+            apartment = it.apartment
+        )
     }
 }

@@ -1,213 +1,218 @@
-package ru.urfu.cake.shop.identity.service.service;
+package ru.urfu.cake.shop.identity.service.service
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto;
-import ru.urfu.cake.shop.identity.service.entity.Address;
-import ru.urfu.cake.shop.identity.service.entity.Role;
-import ru.urfu.cake.shop.identity.service.entity.User;
-import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException;
-import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException;
-import ru.urfu.cake.shop.identity.service.model.UserModel;
-import ru.urfu.cake.shop.identity.service.repository.RoleRepository;
-import ru.urfu.cake.shop.identity.service.repository.UserRepository;
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.test.util.ReflectionTestUtils
+import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto
+import ru.urfu.cake.shop.identity.service.entity.Role
+import ru.urfu.cake.shop.identity.service.entity.User
+import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException
+import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException
+import ru.urfu.cake.shop.identity.service.repository.RoleRepository
+import ru.urfu.cake.shop.identity.service.repository.UserRepository
+import java.time.LocalDateTime
+import java.util.Optional
+import java.util.UUID
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
-class UserServiceImplTest {
-
-    private static final String EMAIL = "user@example.com";
-    private static final String RAW_PASSWORD = "password123";
-    private static final String ENCODED_PASSWORD = "$2a$10$encoded";
+@ExtendWith(MockitoExtension::class)
+internal class UserServiceImplTest {
 
     @Mock
-    private UserRepository userRepository;
+    private lateinit var userRepository: UserRepository
 
     @Mock
-    private RoleRepository roleRepository;
+    private lateinit var roleRepository: RoleRepository
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private lateinit var passwordEncoder: PasswordEncoder
 
     @InjectMocks
-    private UserServiceImpl userService;
+    private lateinit var userService: UserServiceImpl
 
-    private User existingUser;
-    private Role userRole;
+    private lateinit var existingUser: User
+    private lateinit var userRole: Role
 
     @BeforeEach
-    void setUp() {
-        userRole = new Role();
-        userRole.setId(UUID.randomUUID());
-        userRole.setRole("USER");
+    fun setUp() {
+        userRole = Role().apply {
+            role = "USER"
+        }
+        // Устанавливаем приватный или val id через рефлексию
+        ReflectionTestUtils.setField(userRole, "id", UUID.randomUUID())
 
-        existingUser = new User();
-        existingUser.setId(UUID.randomUUID());
-        existingUser.setEmail(EMAIL);
-        existingUser.setPassword(ENCODED_PASSWORD);
-        existingUser.setFirstName("Иван");
-        existingUser.setLastName("Иванов");
-        existingUser.setCreatedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
-        existingUser.setUpdatedAt(LocalDateTime.of(2026, 1, 1, 10, 0));
-        existingUser.setInternalDescription("Секретное описание");
-        existingUser.getRoles().add(userRole);
+        existingUser = User().apply {
+            email = EMAIL
+            password = ENCODED_PASSWORD
+            firstName = "Иван"
+            lastName = "Иванов"
+            createdAt = LocalDateTime.of(2026, 1, 1, 10, 0)
+            updatedAt = LocalDateTime.of(2026, 1, 1, 10, 0)
+            internalDescription = "Секретное описание"
+            roles.add(userRole)
+        }
+        ReflectionTestUtils.setField(existingUser, "id", UUID.randomUUID())
     }
 
     @Test
-    void login_success() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingUser));
-        when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
-        when(userRepository.save(existingUser)).thenReturn(existingUser);
+    fun login_success() {
+        Mockito.`when`(userRepository.findByEmail(EMAIL))
+            .thenReturn(Optional.of(existingUser))
+        Mockito.`when`(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true)
+        Mockito.`when`(userRepository.save(existingUser)).thenReturn(existingUser)
 
-        UserModel result = userService.login(EMAIL, RAW_PASSWORD);
+        val result = userService.login(EMAIL, RAW_PASSWORD)
 
-        assertThat(result.getEmail()).isEqualTo(EMAIL);
-        assertThat(result.getFirstName()).isEqualTo("Иван");
-        assertThat(result.getRoles()).containsExactly("USER");
-        assertThat(result.getInternalDescription()).isNull();
-        assertThat(existingUser.getLastLogin()).isNotNull();
+        assertThat(result.email).isEqualTo(EMAIL)
+        assertThat(result.firstName).isEqualTo("Иван")
+        assertThat(result.roles).containsExactly("USER")
+        assertThat(result.internalDescription).isNull()
+        assertThat(existingUser.lastLogin).isNotNull()
 
-        verify(userRepository).save(existingUser);
+        Mockito.verify(userRepository).save(existingUser)
     }
 
     @Test
-    void login_userNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+    fun login_userNotFound() {
+        Mockito.`when`(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty())
 
-        assertThatThrownBy(() -> userService.login(EMAIL, RAW_PASSWORD))
-                .isInstanceOf(InvalidCredentialsException.class);
+        assertThatThrownBy { userService.login(EMAIL, RAW_PASSWORD) }
+            .isInstanceOf(InvalidCredentialsException::class.java)
 
-        verify(userRepository, never()).save(any());
+        Mockito.verify(userRepository, Mockito.never()).save(ArgumentMatchers.any(User::class.java))
     }
 
     @Test
-    void login_wrongPassword() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingUser));
-        when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(false);
+    fun login_wrongPassword() {
+        Mockito.`when`(userRepository.findByEmail(EMAIL))
+            .thenReturn(Optional.of(existingUser))
+        Mockito.`when`(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(false)
 
-        assertThatThrownBy(() -> userService.login(EMAIL, RAW_PASSWORD))
-                .isInstanceOf(InvalidCredentialsException.class);
+        assertThatThrownBy { userService.login(EMAIL, RAW_PASSWORD) }
+            .isInstanceOf(InvalidCredentialsException::class.java)
 
-        verify(userRepository, never()).save(any());
+        Mockito.verify(userRepository, Mockito.never()).save(ArgumentMatchers.any(User::class.java))
     }
 
     @Test
-    void register_success() {
-        UserRegistrationDto dto = registrationDto();
-        dto.setCity(null);
-        dto.setStreet(null);
-        dto.setHouse(null);
-        dto.setApartment(null);
+    fun register_success() {
+        val dto = registrationDto().copy(
+            city = null,
+            street = null,
+            house = null,
+            apartment = null
+        )
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
-        when(roleRepository.findByRole("USER")).thenReturn(Optional.of(userRole));
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User saved = invocation.getArgument(0);
-            saved.setId(UUID.randomUUID());
-            return saved;
-        });
+        Mockito.`when`(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty())
+        Mockito.`when`(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD)
+        Mockito.`when`(roleRepository.findByRole("USER")).thenReturn(Optional.of(userRole))
+        Mockito.`when`(userRepository.save(ArgumentMatchers.any(User::class.java)))
+            .thenAnswer { invocation ->
+                val saved = invocation.getArgument<User>(0)
+                ReflectionTestUtils.setField(saved, "id", UUID.randomUUID())
+                saved
+            }
 
-        UserModel result = userService.register(dto);
+        val result = userService.register(dto)
 
-        assertThat(result.getEmail()).isEqualTo(EMAIL);
-        assertThat(result.getFirstName()).isEqualTo("Иван");
-        assertThat(result.getLastName()).isEqualTo("Иванов");
-        assertThat(result.getHasSugar()).isFalse();
-        assertThat(result.getRoles()).isEqualTo(Set.of("USER"));
-        assertThat(result.getAddress()).isNull();
-        assertThat(result.getInternalDescription()).isNull();
+        assertThat(result.email).isEqualTo(EMAIL)
+        assertThat(result.firstName).isEqualTo("Иван")
+        assertThat(result.lastName).isEqualTo("Иванов")
+        assertThat(result.hasSugar).isFalse()
+        assertThat(result.roles).containsExactly("USER")
+        assertThat(result.address).isNull()
+        assertThat(result.internalDescription).isNull()
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
+        val userCaptor = ArgumentCaptor.forClass(User::class.java)
+        Mockito.verify(userRepository).save(userCaptor.capture())
 
-        User savedUser = userCaptor.getValue();
-        assertThat(savedUser.getEmail()).isEqualTo(EMAIL);
-        assertThat(savedUser.getPassword()).isEqualTo(ENCODED_PASSWORD);
-        assertThat(savedUser.getCreatedAt()).isNotNull();
-        assertThat(savedUser.getUpdatedAt()).isNotNull();
-        assertThat(savedUser.getRoles()).containsExactly(userRole);
+        val savedUser = userCaptor.value
+        assertThat(savedUser.email).isEqualTo(EMAIL)
+        assertThat(savedUser.password).isEqualTo(ENCODED_PASSWORD)
+        assertThat(savedUser.createdAt).isNotNull()
+        assertThat(savedUser.updatedAt).isNotNull()
+        assertThat(savedUser.roles).containsExactly(userRole)
 
-        verify(passwordEncoder).encode(RAW_PASSWORD);
+        Mockito.verify(passwordEncoder).encode(RAW_PASSWORD)
     }
 
     @Test
-    void register_withAddress() {
-        UserRegistrationDto dto = registrationDto();
+    fun register_withAddress() {
+        val dto = registrationDto()
 
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
-        when(roleRepository.findByRole("USER")).thenReturn(Optional.of(userRole));
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User saved = invocation.getArgument(0);
-            saved.setId(UUID.randomUUID());
-            return saved;
-        });
+        Mockito.`when`(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty())
+        Mockito.`when`(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD)
+        Mockito.`when`(roleRepository.findByRole("USER")).thenReturn(Optional.of(userRole))
+        Mockito.`when`(userRepository.save(ArgumentMatchers.any(User::class.java)))
+            .thenAnswer { invocation ->
+                val saved = invocation.getArgument<User>(0)
+                ReflectionTestUtils.setField(saved, "id", UUID.randomUUID())
+                saved
+            }
 
-        UserModel result = userService.register(dto);
+        val result = userService.register(dto)
 
-        assertThat(result.getAddress()).isNotNull();
-        assertThat(result.getAddress().getCity()).isEqualTo("Екатеринбург");
-        assertThat(result.getAddress().getStreet()).isEqualTo("Ленина");
-        assertThat(result.getAddress().getHouse()).isEqualTo("1");
-        assertThat(result.getAddress().getApartment()).isEqualTo("10");
+        assertThat(result.address).isNotNull
+        assertThat(result.address?.city).isEqualTo("Екатеринбург")
+        assertThat(result.address?.street).isEqualTo("Ленина")
+        assertThat(result.address?.house).isEqualTo("1")
+        assertThat(result.address?.apartment).isEqualTo("10")
     }
 
     @Test
-    void register_emailAlreadyExists() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existingUser));
+    fun register_emailAlreadyExists() {
+        Mockito.`when`(userRepository.findByEmail(EMAIL))
+            .thenReturn(Optional.of(existingUser))
 
-        assertThatThrownBy(() -> userService.register(registrationDto()))
-                .isInstanceOf(UserAlreadyExistsException.class)
-                .hasMessageContaining(EMAIL);
+        assertThatThrownBy { userService.register(registrationDto()) }
+            .isInstanceOf(UserAlreadyExistsException::class.java)
+            .hasMessageContaining(EMAIL)
 
-        verify(userRepository, never()).save(any());
-        verify(passwordEncoder, never()).encode(any());
+        Mockito.verify(userRepository, Mockito.never()).save(ArgumentMatchers.any(User::class.java))
+        Mockito.verify(passwordEncoder, Mockito.never()).encode(ArgumentMatchers.anyString())
     }
 
     @Test
-    void register_roleNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
-        when(roleRepository.findByRole("USER")).thenReturn(Optional.empty());
+    fun register_roleNotFound() {
+        Mockito.`when`(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty())
+        Mockito.`when`(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD)
+        Mockito.`when`(roleRepository.findByRole("USER")).thenReturn(Optional.empty())
 
-        assertThatThrownBy(() -> userService.register(registrationDto()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Role USER");
+        assertThatThrownBy { userService.register(registrationDto()) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Role USER")
 
-        verify(userRepository, never()).save(any());
+        Mockito.verify(userRepository, Mockito.never()).save(ArgumentMatchers.any(User::class.java))
     }
 
-    private UserRegistrationDto registrationDto() {
-        UserRegistrationDto dto = new UserRegistrationDto();
-        dto.setEmail(EMAIL);
-        dto.setPassword(RAW_PASSWORD);
-        dto.setFirstName("Иван");
-        dto.setLastName("Иванов");
-        dto.setPhoneNumber("+79991234567");
-        dto.setHasSugar(false);
-        dto.setPublicDescription("Люблю торты");
-        dto.setCity("Екатеринбург");
-        dto.setStreet("Ленина");
-        dto.setHouse("1");
-        dto.setApartment("10");
-        return dto;
+    private fun registrationDto(): UserRegistrationDto {
+        return UserRegistrationDto(
+            email = EMAIL,
+            password = RAW_PASSWORD,
+            firstName = "Иван",
+            lastName = "Иванов",
+            phoneNumber = "+79991234567",
+            hasSugar = false,
+            publicDescription = "Люблю торты",
+            city = "Екатеринбург",
+            street = "Ленина",
+            house = "1",
+            apartment = "10"
+        )
+    }
+
+    companion object {
+        private const val EMAIL = "user@example.com"
+        private const val RAW_PASSWORD = "password123"
+        private const val ENCODED_PASSWORD = "\$2a\$10\$encoded"
     }
 }

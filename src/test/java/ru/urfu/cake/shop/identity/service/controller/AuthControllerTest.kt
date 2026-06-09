@@ -1,152 +1,177 @@
-package ru.urfu.cake.shop.identity.service.controller;
+package ru.urfu.cake.shop.identity.service.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import ru.urfu.cake.shop.identity.service.dto.LoginRequestDto;
-import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto;
-import ru.urfu.cake.shop.identity.service.exception.GlobalExceptionHandler;
-import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException;
-import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException;
-import ru.urfu.cake.shop.identity.service.model.UserModel;
-import ru.urfu.cake.shop.identity.service.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.hamcrest.Matchers
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.context.annotation.Import
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import ru.urfu.cake.shop.identity.service.dto.LoginRequestDto
+import ru.urfu.cake.shop.identity.service.dto.UserRegistrationDto
+import ru.urfu.cake.shop.identity.service.exception.GlobalExceptionHandler
+import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException
+import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException
+import ru.urfu.cake.shop.identity.service.model.UserModel
+import ru.urfu.cake.shop.identity.service.service.UserService
+import java.util.*
 
-import java.util.Set;
-import java.util.UUID;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(AuthController.class)
+@WebMvcTest(AuthController::class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(GlobalExceptionHandler.class)
-class AuthControllerTest {
+@Import(GlobalExceptionHandler::class)
+internal class AuthControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private lateinit var mockMvc: MockMvc
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private lateinit var objectMapper: ObjectMapper
 
     @MockBean
-    private UserService userService;
+    private lateinit var userService: UserService
 
-    @Test
-    void login_success() throws Exception {
-        UserModel userModel = UserModel.builder()
-                .id(UUID.randomUUID())
-                .email("user@example.com")
-                .roles(Set.of("USER"))
-                .build();
-
-        when(userService.login(eq("user@example.com"), eq("password123"))).thenReturn(userModel);
-
-        LoginRequestDto request = new LoginRequestDto();
-        request.setEmail("user@example.com");
-        request.setPassword("password123");
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Login successful"))
-                .andExpect(jsonPath("$.data.email").value("user@example.com"))
-                .andExpect(jsonPath("$.data.roles[0]").value("USER"));
+    // Хелпер для обхода ограничений Kotlin на non-null матчеры
+    private fun <T> anyObject(): T {
+        Mockito.any<T>()
+        return null as T
     }
 
     @Test
-    void login_invalidCredentials() throws Exception {
-        when(userService.login(any(), any())).thenThrow(new InvalidCredentialsException());
+    fun login_success() {
+        val userModel = UserModel(
+            id = UUID.randomUUID(),
+            email = "user@example.com",
+            roles = setOf("USER")
+        )
 
-        LoginRequestDto request = new LoginRequestDto();
-        request.setEmail("user@example.com");
-        request.setPassword("wrong");
+        Mockito.`when`(
+            userService.login(
+                "user@example.com",
+                "password123"
+            )
+        ).thenReturn(userModel)
 
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Неверный email или пароль"));
+        val request = LoginRequestDto(
+            email = "user@example.com",
+            password = "password123"
+        )
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isOk)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(true))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Login successful"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.email").value("user@example.com"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.roles[0]").value("USER"))
     }
 
     @Test
-    void login_validationError() throws Exception {
-        LoginRequestDto request = new LoginRequestDto();
-        request.setEmail("");
-        request.setPassword("");
+    fun login_invalidCredentials() {
+        Mockito.`when`(userService.login(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+            .thenThrow(InvalidCredentialsException())
 
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value(containsString("email")));
+        val request = LoginRequestDto(
+            email = "user@example.com",
+            password = "wrong"
+        )
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isUnauthorized)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(false))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Неверный email или пароль"))
     }
 
     @Test
-    void register_success() throws Exception {
-        UserModel userModel = UserModel.builder()
-                .id(UUID.randomUUID())
-                .email("new@example.com")
-                .roles(Set.of("USER"))
-                .build();
+    fun login_validationError() {
+        val request = LoginRequestDto(
+            email = "",
+            password = ""
+        )
 
-        when(userService.register(any(UserRegistrationDto.class))).thenReturn(userModel);
-
-        UserRegistrationDto request = new UserRegistrationDto();
-        request.setEmail("new@example.com");
-        request.setPassword("password123");
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Registration successful"))
-                .andExpect(jsonPath("$.data.email").value("new@example.com"));
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(false))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.containsString("email")))
     }
 
     @Test
-    void register_emailAlreadyExists() throws Exception {
-        when(userService.register(any(UserRegistrationDto.class)))
-                .thenThrow(new UserAlreadyExistsException("exists@example.com"));
+    fun register_success() {
+        val userModel = UserModel(
+            id = UUID.randomUUID(),
+            email = "new@example.com",
+            roles = setOf("USER")
+        )
 
-        UserRegistrationDto request = new UserRegistrationDto();
-        request.setEmail("exists@example.com");
-        request.setPassword("password123");
+        Mockito.`when`(userService.register(anyObject())).thenReturn(userModel)
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value(containsString("exists@example.com")));
+        val request = UserRegistrationDto(
+            email = "new@example.com",
+            password = "password123"
+        )
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(true))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Registration successful"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.email").value("new@example.com"))
     }
 
     @Test
-    void register_validationError_shortPassword() throws Exception {
-        UserRegistrationDto request = new UserRegistrationDto();
-        request.setEmail("user@example.com");
-        request.setPassword("short");
+    fun register_emailAlreadyExists() {
+        Mockito.`when`(userService.register(anyObject()))
+            .thenThrow(UserAlreadyExistsException("exists@example.com"))
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value(containsString("password")));
+        val request = UserRegistrationDto(
+            email = "exists@example.com",
+            password = "password123"
+        )
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isConflict)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(false))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.containsString("exists@example.com")))
+    }
+
+    @Test
+    fun register_validationError_shortPassword() {
+        val request = UserRegistrationDto(
+            email = "user@example.com",
+            password = "short"
+        )
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(false))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.containsString("password")))
     }
 }

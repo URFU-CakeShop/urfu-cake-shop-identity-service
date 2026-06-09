@@ -1,16 +1,10 @@
-package ru.urfu.cake.shop.identity.service.dto;
+package ru.urfu.cake.shop.identity.service.dto
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
-    private boolean success;
-    private T data;
-    private String message;
-}
+data class ApiResponse<T>(
+    val success: Boolean = false,
+    val data: T? = null,
+    val message: String? = null
+)

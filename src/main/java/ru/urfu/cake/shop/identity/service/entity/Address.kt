@@ -1,29 +1,32 @@
-package ru.urfu.cake.shop.identity.service.entity;
+package ru.urfu.cake.shop.identity.service.entity
 
-import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 
 @Entity
 @Table(name = "addresses")
-@Data
-public class Address {
-
+class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    val id: Long? = null
 
-    @Column()
-    private String city;
+    @Column(nullable = false)
+    var city: String = ""
 
-    @Column()
-    private String street;
+    @Column(nullable = false)
+    var street: String = ""
 
-    @Column()
-    private String house;
+    @Column(nullable = false)
+    var house: String = ""
 
-    @Column()
-    private String apartment;
+    @Column
+    var apartment: String = ""
 
     @OneToOne(mappedBy = "address")
-    private User user;
+    val user: User? = null
 }

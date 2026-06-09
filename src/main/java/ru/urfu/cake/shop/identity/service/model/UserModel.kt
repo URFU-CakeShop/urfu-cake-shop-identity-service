@@ -1,70 +1,63 @@
-package ru.urfu.cake.shop.identity.service.model;
+package ru.urfu.cake.shop.identity.service.model
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Embedded;
-import lombok.Builder;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.persistence.Embedded
+import java.time.LocalDateTime
+import java.util.UUID
 
-import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.UUID;
-
-@Data
-@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Модель пользователя")
-public class UserModel {
+data class UserModel(
+    @field:Schema(description = "Уникальный идентификатор пользователя")
+    val id: UUID? = null,
 
-    @Schema(description = "Уникальный идентификатор пользователя")
-    private UUID id;
+    @field:Schema(description = "Электронная почта пользователя")
+    val email: String? = null,
 
-    @Schema(description = "Электронная почта пользователя")
-    private String email;
+    @field:Schema(description = "Телефон пользователя")
+    val phoneNumber: String? = null,
 
-    @Schema(description = "Телефон пользователя")
-    private String phoneNumber;
+    @field:Schema(description = "Имя пользователя")
+    val firstName: String? = null,
 
-    @Schema(description = "Имя пользователя")
-    private String firstName;
+    @field:Schema(description = "Фамилия пользователя")
+    val lastName: String? = null,
 
-    @Schema(description = "Фамилия пользователя")
-    private String lastName;
+    @field:Schema(description = "Отчество пользователя")
+    val middleName: String? = null,
 
-    @Schema(description = "Отчество пользователя")
-    private String middleName;
-
-    @Schema(description = "Адрес пользователя")
+    @field:Schema(description = "Адрес пользователя")
     @Embedded
-    private AddressModel address;
+    val address: AddressModel? = null,
 
-    @Schema(description = "Ест ли у пользователь сахар")
-    private Boolean hasSugar;
+    @field:Schema(description = "Ест ли у пользователь сахар")
+    val hasSugar: Boolean? = null,
 
-    @Schema(description = "Дата и время создания пользователя")
-    private LocalDateTime createdAt;
+    @field:Schema(description = "Дата и время создания пользователя")
+    val createdAt: LocalDateTime? = null,
 
-    @Schema(description = "Дата и время последнего обновления пользователя")
-    private LocalDateTime updatedAt;
+    @field:Schema(description = "Дата и время последнего обновления пользователя")
+    val updatedAt: LocalDateTime? = null,
 
-    @Schema(description = "Дата и время последнего входа пользователя")
-    private LocalDateTime lastLogin;
+    @field:Schema(description = "Дата и время последнего входа пользователя")
+    val lastLogin: LocalDateTime? = null,
 
-    @Schema(description = "Идентификатор корзины пользователя")
-    private UUID cartId;
+    @field:Schema(description = "Идентификатор корзины пользователя")
+    val cartId: UUID? = null,
 
-    @Schema(description = "Идентификатор аватара пользователя")
-    private UUID avatarImageId;
+    @field:Schema(description = "Идентификатор аватара пользователя")
+    val avatarImageId: UUID? = null,
 
-    @Schema(description = "Дополнительные изображения пользователя")
-    private Set<Long> imageIds;
+    @field:Schema(description = "Дополнительные изображения пользователя")
+    val imageIds: Set<Long>? = null,
 
-    @Schema(description = "Роли пользователя")
-    private Set<String> roles;
+    @field:Schema(description = "Роли пользователя")
+    val roles: Set<String>? = null,
 
-    @Schema(description = "Описание, которое может редактировать сам пользователь")
-    private String publicDescription;
+    @field:Schema(description = "Описание, которое может редактировать сам пользователь")
+    val publicDescription: String? = null,
 
-    @Schema(description = "Внутреннее описание пользователя (видимое только поварам/админу)")
-    private String internalDescription;
-}
+    @field:Schema(description = "Внутреннее описание пользователя (видимое только поварам/админу)")
+    val internalDescription: String? = null
+)

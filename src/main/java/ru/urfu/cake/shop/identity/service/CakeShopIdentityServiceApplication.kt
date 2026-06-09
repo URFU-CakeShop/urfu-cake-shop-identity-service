@@ -1,12 +1,11 @@
-package ru.urfu.cake.shop.identity.service;
+package ru.urfu.cake.shop.identity.service
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
 
 @SpringBootApplication
-public class CakeShopIdentityServiceApplication {
+class CakeShopIdentityServiceApplication
 
-	public static void main(String[] args) {
-		SpringApplication.run(CakeShopIdentityServiceApplication.class, args);
-	}
+fun main(args: Array<String>) {
+    runApplication<CakeShopIdentityServiceApplication>(*args)
 }

@@ -1,32 +1,29 @@
-package ru.urfu.cake.shop.identity.service.dto;
+package ru.urfu.cake.shop.identity.service.dto
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
+import jakarta.validation.constraints.Email
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 
-@Data
-public class UserRegistrationDto {
+data class UserRegistrationDto(
+    @field:NotBlank(message = "email обязателен")
+    @field:Email(message = "некорректный формат email")
+    val email: String = "",
 
-    @NotBlank(message = "email обязателен")
-    @Email(message = "некорректный формат email")
-    private String email;
+    @field:NotBlank(message = "password обязателен")
+    @field:Size(min = 8, message = "password должен содержать минимум 8 символов")
+    val password: String = "",
 
-    @NotBlank(message = "password обязателен")
-    @Size(min = 8, message = "password должен содержать минимум 8 символов")
-    private String password;
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val middleName: String? = null,
 
-    private String firstName;
-    private String lastName;
-    private String middleName;
+    val city: String? = null,
+    val street: String? = null,
+    val house: String? = null,
+    val apartment: String? = null,
 
-    private String city;
-    private String street;
-    private String house;
-    private String apartment;
+    val phoneNumber: String? = null,
+    val hasSugar: Boolean = false,
 
-    private String phoneNumber;
-    private Boolean hasSugar;
-
-    private String publicDescription;
-}
+    val publicDescription: String? = null
+)

@@ -1,62 +1,59 @@
-package ru.urfu.cake.shop.identity.service.entity;
+package ru.urfu.cake.shop.identity.service.entity
 
-import jakarta.persistence.*;
-import lombok.Data;
-import org.hibernate.annotations.UuidGenerator;
+import jakarta.persistence.*
+import org.hibernate.annotations.UuidGenerator
+import java.time.LocalDateTime
+import java.util.*
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
-@Table(name = "users")
 @Entity
-@Data
-public class User {
-
+@Table(name = "users")
+class User {
     @Id
     @GeneratedValue
     @UuidGenerator
     @Column(updatable = false, nullable = false)
-    private UUID id;
+    val id: UUID? = null
 
-    private String email;
-    private String password;
+    @Column(nullable = false, unique = true)
+    var email: String = ""
+
+    @Column(nullable = false)
+    var password: String = ""
 
     // Личные данные
-    private String firstName;
-    private String lastName;
-    private String middleName;
-    private Boolean hasSugar; // диабет или особенности здоровья
-    private String phoneNumber;
+    var firstName: String? = null
+    var lastName: String? = null
+    var middleName: String? = null
+    var hasSugar: Boolean? = null
+    var phoneNumber: String? = null
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime lastLogin;
+    var createdAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null
+    var lastLogin: LocalDateTime? = null
 
     // Связи с другими сервисами
-    private UUID cartId; // CartService
-    private UUID avatarImageId; // ImageService (аватар)
+    var cartId: UUID? = null
+    var avatarImageId: UUID? = null
+
     // Дополнительные картинки пользователя (например, галерея)
     @ElementCollection
-    private Set<Long> imageIds = new HashSet<>(); // ImageService
+    var imageIds: MutableSet<Long> = HashSet()
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
-    private Address address;
+    var address: Address? = null
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+        name = "user_roles",
+        joinColumns = [JoinColumn(name = "user_id")],
+        inverseJoinColumns = [JoinColumn(name = "role_id")]
     )
-    private Set<Role> roles = new HashSet<>();
-
-    // Описания
-    @Column(length = 2000)
-    private String publicDescription;  // описание, которое сам пользователь может редактировать
+    var roles: MutableSet<Role> = HashSet()
 
     @Column(length = 2000)
-    private String internalDescription; // описание от админа, видно только поварам и админам
+    var publicDescription: String? = null
+
+    @Column(length = 2000)
+    var internalDescription: String? = null
 }

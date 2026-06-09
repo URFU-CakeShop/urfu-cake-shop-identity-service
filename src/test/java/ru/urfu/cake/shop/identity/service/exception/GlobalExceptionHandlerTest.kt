@@ -1,77 +1,72 @@
-package ru.urfu.cake.shop.identity.service.exception;
+package ru.urfu.cake.shop.identity.service.exception
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.core.MethodParameter;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import ru.urfu.cake.shop.identity.service.controller.AuthController;
-import ru.urfu.cake.shop.identity.service.dto.ApiResponse;
-import ru.urfu.cake.shop.identity.service.dto.LoginRequestDto;
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.core.MethodParameter
+import org.springframework.http.HttpStatus
+import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.web.bind.MethodArgumentNotValidException
+import ru.urfu.cake.shop.identity.service.controller.AuthController
+import ru.urfu.cake.shop.identity.service.dto.LoginRequestDto
+import ru.urfu.cake.shop.identity.service.exception.InvalidCredentialsException
+import ru.urfu.cake.shop.identity.service.exception.UserAlreadyExistsException
 
-import static org.assertj.core.api.Assertions.assertThat;
+internal class GlobalExceptionHandlerTest {
 
-class GlobalExceptionHandlerTest {
-
-    private GlobalExceptionHandler handler;
+    private lateinit var handler: GlobalExceptionHandler
 
     @BeforeEach
-    void setUp() {
-        handler = new GlobalExceptionHandler();
+    fun setUp() {
+        handler = GlobalExceptionHandler()
     }
 
     @Test
-    void handleUserAlreadyExists() {
-        ResponseEntity<ApiResponse<Void>> response =
-                handler.handleUserAlreadyExists(new UserAlreadyExistsException("user@example.com"));
+    fun handleUserAlreadyExists() {
+        val response = handler.handleUserAlreadyExists(UserAlreadyExistsException("user@example.com"))
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).contains("user@example.com");
-        assertThat(response.getBody().getData()).isNull();
+        assertThat(response.statusCode).isEqualTo(HttpStatus.CONFLICT)
+        assertThat(response.body).isNotNull
+        assertThat(response.body?.success).isFalse()
+        assertThat(response.body?.message).contains("user@example.com")
+        assertThat(response.body?.data).isNull()
     }
 
     @Test
-    void handleInvalidCredentials() {
-        ResponseEntity<ApiResponse<Void>> response =
-                handler.handleInvalidCredentials(new InvalidCredentialsException());
+    fun handleInvalidCredentials() {
+        val response = handler.handleInvalidCredentials(InvalidCredentialsException())
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).isEqualTo("Неверный email или пароль");
+        assertThat(response.statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
+        assertThat(response.body).isNotNull
+        assertThat(response.body?.success).isFalse()
+        assertThat(response.body?.message).isEqualTo("Неверный email или пароль")
     }
 
     @Test
-    void handleValidation() throws NoSuchMethodException {
-        LoginRequestDto dto = new LoginRequestDto();
-        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(dto, "loginRequestDto");
-        bindingResult.rejectValue("email", "NotBlank", "email обязателен");
+    fun handleValidation() {
+        val dto = LoginRequestDto()
+        val bindingResult = BeanPropertyBindingResult(dto, "loginRequestDto")
+        bindingResult.rejectValue("email", "NotBlank", "email обязателен")
 
-        MethodParameter methodParameter = new MethodParameter(
-                AuthController.class.getDeclaredMethod("login", LoginRequestDto.class), 0);
-        MethodArgumentNotValidException exception =
-                new MethodArgumentNotValidException(methodParameter, bindingResult);
+        val method = AuthController::class.java.getDeclaredMethod("login", LoginRequestDto::class.java)
+        val methodParameter = MethodParameter(method, 0)
+        val exception = MethodArgumentNotValidException(methodParameter, bindingResult)
 
-        ResponseEntity<ApiResponse<Void>> response = handler.handleValidation(exception);
+        val response = handler.handleValidation(exception)
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).isEqualTo("email: email обязателен");
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+        assertThat(response.body).isNotNull
+        assertThat(response.body?.success).isFalse()
+        assertThat(response.body?.message).isEqualTo("email: email обязателен")
     }
 
     @Test
-    void handleOtherExceptions() {
-        ResponseEntity<ApiResponse<Void>> response =
-                handler.handleOtherExceptions(new RuntimeException("database connection failed"));
+    fun handleOtherExceptions() {
+        val response = handler.handleOtherExceptions(RuntimeException("database connection failed"))
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).isEqualTo("Произошла внутренняя ошибка");
+        assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+        assertThat(response.body).isNotNull
+        assertThat(response.body?.success).isFalse()
+        assertThat(response.body?.message).isEqualTo("Произошла внутренняя ошибка")
     }
 }

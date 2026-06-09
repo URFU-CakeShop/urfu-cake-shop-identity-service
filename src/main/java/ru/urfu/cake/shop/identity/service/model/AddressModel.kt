@@ -1,22 +1,17 @@
-package ru.urfu.cake.shop.identity.service.model;
+package ru.urfu.cake.shop.identity.service.model
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema
 
-@Builder
-@Data
-public class AddressModel {
+data class AddressModel(
+    @field:Schema(description = "Город проживания пользователя", example = "Екатеринбург")
+    val city: String,
 
-    @Schema(description = "Город проживания пользователя", example = "Екатеринбург")
-    private String city;
+    @field:Schema(description = "Улица", example = "Ленина")
+    val street: String,
 
-    @Schema(description = "Улица", example = "Ленина")
-    private String street;
+    @field:Schema(description = "Номер дома", example = "15")
+    val house: String,
 
-    @Schema(description = "Номер дома", example = "15")
-    private String house;
-
-    @Schema(description = "Номер квартиры", example = "42")
-    private String apartment;
-}
+    @field:Schema(description = "Номер квартиры", example = "42")
+    val apartment: String,
+)
